@@ -1,0 +1,22 @@
+dependencies {
+    api libs.spock.core
+    //  api libs.awssdk.kinesis
+    //    api libs.aws.sdk
+    implementation 'software.amazon.awssdk:kinesis:2.17.28'
+    implementation 'software.amazon.kinesis:amazon-kinesis-client:2.3.6'
+    implementation 'software.amazon.awssdk:netty-nio-client:2.17.28'
+    implementation 'software.amazon.awssdk:http-client-spi:2.17.28'
+
+    testImplementation 'software.amazon.awssdk:apache-client:2.17.28'
+
+    //    implementation 'software.amazon.awssdk:sdk-core:2.17.28'
+
+
+    implementation 'ch.qos.logback:logback-classic:1.2.5'
+    //    implementation 'software.amazon.awssdk:netty-nio-client:2.17.27'
+    // https://mvnrepository.com/artifact/cloud.localstack/localstack-utils
+    //    testImplementation 'cloud.localstack:localstack-utils:0.2.15'
+    testImplementation 'org.testcontainers:localstack:1.16.0'
+    testImplementation "org.testcontainers:spock:1.16.0"
+    testImplementation 'com.amazonaws:aws-java-sdk:1.12.55'
+}

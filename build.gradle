@@ -1,0 +1,91 @@
+buildscript {
+    ext {
+
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+    }
+
+}
+
+group = 'by.avorakh.aws'
+
+rootProject.version = '0.1.0'
+
+subprojects {
+
+    apply plugin: 'java'
+    apply plugin: 'java-library'
+    apply plugin: 'groovy'
+    apply plugin: 'maven-publish'
+
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+    }
+
+    ext {
+
+        spockVersion = '2.0-groovy-3.0'
+        // global
+        annotationVersion = '21.0.1'
+        lombokVersion = '1.18.20'
+    }
+
+
+    dependencies {
+        compileOnly "org.jetbrains:annotations:$annotationVersion"
+        compileOnly "org.projectlombok:lombok:$lombokVersion"
+        annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+
+        testCompileOnly "org.projectlombok:lombok:$lombokVersion"
+        testCompileOnly "org.jetbrains:annotations:$annotationVersion"
+        testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+}
+
+
+task cleanBuildPublish(type: GradleBuild) {
+    group = 'build'
+    description = 'Clean -> Build -> Run Tests -> Publish artifacts to local maven repository.'
+    tasks = ['clean', 'build', 'publishToMavenLocal']
+}
+
+task cleanBuildPublishWithoutTests(type: GradleBuild) {
+    group = 'build'
+    description = 'Clean -> Build -> Publish artifacts to local maven repository.'
+    tasks = ['clean', 'jar', 'publishToMavenLocal']
+}
+
+task buildPublish(type: GradleBuild) {
+    group = 'build'
+    description = 'Build -> Run Tests -> Publish artifacts to local maven repository.'
+    tasks = ['build', 'publishToMavenLocal']
+}
+
+task buildPublishWithoutTests(type: GradleBuild) {
+    group = 'build'
+    description = 'Build -> Publish artifacts to local maven repository.'
+    tasks = ['jar', 'publishToMavenLocal']
+}
+wrapper {
+    gradleVersion = '7.0'
+    distributionType = Wrapper.DistributionType.ALL
+}
