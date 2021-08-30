@@ -4,24 +4,14 @@ import by.avorakh.aws.kinesis.KinesisStreamStatus;
 import by.avorakh.aws.kinesis.svc.KinesisManageService;
 import by.avorakh.aws.kinesis.svc.KinesisManageTestService;
 import by.avorakh.aws.kinesis.util.KinesisRequestUtil;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import software.amazon.awssdk.services.kinesis.KinesisClient;
 import software.amazon.awssdk.services.kinesis.model.KinesisException;
-import software.amazon.awssdk.services.kinesis.model.StreamDescription;
-
-import java.util.List;
 
 @Slf4j
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class DefaultKinesisManageService implements KinesisManageService, KinesisManageTestService {
-
-    @NotNull KinesisClient kinesisClient;
+public class DefaultKinesisManageService extends SimpleKinesisStreamInformater implements KinesisManageService,
+    KinesisManageTestService {
 
     @Override
     public @NotNull KinesisStreamStatus createStream(@NotNull String streamName, int shardCount) {
@@ -48,22 +38,16 @@ public class DefaultKinesisManageService implements KinesisManageService, Kinesi
 
     @Override
     public void prepareStream(@NotNull String streamName, int shardCount) throws InterruptedException {
+
         KinesisStreamStatus streamStatus;
 
         do {
-             streamStatus = createStream(streamName, shardCount);
-
+            streamStatus = createStream(streamName, shardCount);
         } while (!KinesisStreamStatus.ACTIVE.equals(streamStatus));
 
         Thread.sleep(100);
 
         log.warn("Stream '{}' is prepared", streamName);
-    }
-
-    @Override
-    public @NotNull List<String> getStreamNames() {
-
-        return kinesisClient.listStreams().streamNames();
     }
 
     @Override
@@ -89,51 +73,8 @@ public class DefaultKinesisManageService implements KinesisManageService, Kinesi
         }
     }
 
-    private @NotNull KinesisStreamStatus getStreamStatus(@NotNull String streamName) {
-
-        var streamDescription = getStreamInfo(streamName);
-
-        if (streamDescription == null) {
-            return KinesisStreamStatus.NOT_FOUND;
-        }
-
-        switch (streamDescription.streamStatus()) {
-            case CREATING:
-                return KinesisStreamStatus.CREATING;
-            case DELETING:
-                return KinesisStreamStatus.DELETING;
-
-            case UPDATING:
-                return KinesisStreamStatus.UPDATING;
-
-            case ACTIVE:
-            default:
-                return KinesisStreamStatus.ACTIVE;
-        }
-    }
-
     @Override
-    public @Nullable StreamDescription getStreamInfo(@NotNull String streamName) {
-
-        try {
-
-            if (!containStream(streamName)) {
-
-                log.error("Stream '{}' does not exist.", streamName);
-                return null;
-            }
-
-            var describeStreamRequest = KinesisRequestUtil.toDescribeStreamRequest(streamName);
-            var describeStreamResponse = kinesisClient.describeStream(describeStreamRequest);
-            return describeStreamResponse.streamDescription();
-        } catch (KinesisException e) {
-            log.error("Impossible get info about Kinesis stream by:", e);
-            throw e;
-        }
-    }
-
-    @Override
-    public void deleteAllStreams() throws InterruptedException {
+    public synchronized void deleteAllStreams() throws InterruptedException {
 
         var streamNames = getStreamNames();
 
@@ -142,7 +83,7 @@ public class DefaultKinesisManageService implements KinesisManageService, Kinesi
             return;
         }
 
-        while (!streamNames.isEmpty()) {
+        do {
             log.warn("Stream count is '{}'", streamNames.size());
             for (var streamName : streamNames) {
                 var streamStatus = deleteStream(streamName);
@@ -150,14 +91,14 @@ public class DefaultKinesisManageService implements KinesisManageService, Kinesi
             }
 
             streamNames = getStreamNames();
-        }
+        } while (!streamNames.isEmpty());
 
         Thread.sleep(100);
         log.warn("All streams are deleted");
     }
 
-    private boolean containStream(@NotNull String streamName) {
+    public DefaultKinesisManageService(@NotNull KinesisClient kinesisClient) {
 
-        return getStreamNames().contains(streamName);
+        super(kinesisClient);
     }
 }

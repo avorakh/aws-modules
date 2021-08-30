@@ -1,6 +1,7 @@
 package by.avorakh.aws.kinesis.svc.impl;
 
-import by.avorakh.aws.kinesis.svc.KinesisProducer;
+import by.avorakh.aws.kinesis.PutRecordPub;
+import by.avorakh.aws.kinesis.svc.AsyncKinesisProducer;
 import by.avorakh.aws.kinesis.util.KinesisRequestUtil;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -14,13 +15,13 @@ import java.util.concurrent.CompletionException;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class SimpleKinesisProducer implements KinesisProducer {
+public class SimpleAsyncKinesisProducer implements AsyncKinesisProducer {
 
     @NotNull KinesisAsyncClient kinesisClient;
     @NotNull String streamName;
 
     @Override
-    public @NotNull CompletableFuture<Void> putRecord(@NotNull String partitionKey, byte @NotNull [] bytes) {
+    public @NotNull CompletableFuture<PutRecordPub> putRecord(@NotNull String partitionKey, byte @NotNull [] bytes) {
 
         return validateStream().thenCompose(activeStream -> {
 
@@ -33,17 +34,25 @@ public class SimpleKinesisProducer implements KinesisProducer {
             if (!activeStream) {
                 // TODO need to add to the queue
                 log.error("Impossible to sent a record");
-                return CompletableFuture.completedFuture(null);
+
+
+                return CompletableFuture.completedFuture(PutRecordPub.builder().putted(false).build());
             }
 
             return kinesisClient.putRecord(putRecordRequest)
-                .thenAccept(putRecordResponse -> {
+                .thenApply(putRecordResponse -> {
                     log.debug(
                         "Put record - Shard Id: '{}', sequence number:'{}', encryption type: '{}'",
                         putRecordResponse.shardId(),
                         putRecordResponse.sequenceNumber(),
                         putRecordResponse.encryptionType()
                     );
+
+                    return PutRecordPub.builder()
+                        .putted(true)
+                        .shardId(putRecordResponse.shardId())
+                        .sequenceNumber(putRecordResponse.sequenceNumber())
+                        .build();
                 }); // TODO add exception handling
         });
     }
@@ -82,7 +91,7 @@ public class SimpleKinesisProducer implements KinesisProducer {
             });
     }
 
-    public SimpleKinesisProducer(
+    public SimpleAsyncKinesisProducer(
         @NotNull KinesisAsyncClient kinesisClient,
         @NotNull String streamName
     ) {

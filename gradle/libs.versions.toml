@@ -3,11 +3,12 @@
 spock = '2.0-groovy-3.0'
 #kinesis = '2.3.6'
 #aws-sdk = '1.12.55'
-amazon-kinesis = '1.14.4'
-awssdk-kinesis = '2.17.27'
+awssdkv2= '2.17.28'
+kinesisv2 = '2.3.6'
 [libraries]
 spock-core = { module = 'org.spockframework:spock-core', version.ref = 'spock' }
 #amazon-kinesis = {module = 'software.amazon.kinesis:amazon-kinesis-client', version.ref = 'kinesis'}
 #aws-sdk =  {module = 'com.amazonaws:aws-java-sdk', version.ref = 'aws-sdk'}
 #amazon-kinesis-client = {module = 'com.amazonaws:amazon-kinesis-client', version.ref = 'amazon-kinesis'}
-awssdk-kinesis = {module = 'software.amazon.awssdk:kinesis', version.ref = 'awssdk-kinesis'}
+awssdk-kinesis-core = {module = 'software.amazon.awssdk:kinesis', version.ref = 'awssdkv2'}
+amazon-kinesis-client = {module = 'software.amazon.kinesis:amazon-kinesis-client', version.ref = 'kinesisv2'}

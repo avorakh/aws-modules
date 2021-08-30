@@ -3,9 +3,12 @@ package by.avorakh.aws.kinesis.svc.impl
 import by.avorakh.aws.kinesis.KinesisStreamStatus
 import by.avorakh.aws.kinesis.svc.KinesisManageService
 import by.avorakh.aws.kinesis.svc.KinesisManageTestService
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.kinesis.KinesisClient
+import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -24,8 +27,13 @@ class DefaultKinesisManageServiceTest extends Specification {
 
         def endpointOverride = URI.create("http://localhost:4566")
 
+        def credentialsProvider = StaticCredentialsProvider.create(
+            AwsBasicCredentials.create("AccessKey", "SecretKey")
+        )
+
         testKinesisClient = KinesisClient.builder()
             .httpClient(ApacheHttpClient.create())
+            .credentialsProvider(credentialsProvider)
             .region(region)
             .endpointOverride(endpointOverride)
             .build()
@@ -38,9 +46,32 @@ class DefaultKinesisManageServiceTest extends Specification {
         kinesisManageTestService.deleteAllStreams()
     }
 
+    def cleanup() {
+
+        kinesisManageTestService.deleteAllStreams()
+    }
+
     def cleanupSpec() {
 
         testKinesisClient.close()
+    }
+
+    def "should successfully delete all streams"() {
+
+        when:
+            kinesisManageTestService.deleteAllStreams()
+        then:
+            noExceptionThrown()
+    }
+
+    def "should successfully prepare stream"() {
+
+        given:
+            String streamName = "SomeTestStream0"
+        when:
+            kinesisManageTestService.prepareStream(streamName, 1)
+        then:
+            noExceptionThrown()
     }
 
     def "should successfully create stream"() {
@@ -55,6 +86,7 @@ class DefaultKinesisManageServiceTest extends Specification {
             result == KinesisStreamStatus.CREATING
     }
 
+    @Retry(count = 5)
     def "should successfully delete stream"() {
 
         given:

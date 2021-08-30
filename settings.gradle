@@ -3,6 +3,4 @@ enableFeaturePreview("VERSION_CATALOGS")
 
 rootProject.name = 'aws-modules'
 
-include 'aws-kinesis-producer'
-include 'aws-kinesis-consumer'
 include 'aws-kinesis-service'

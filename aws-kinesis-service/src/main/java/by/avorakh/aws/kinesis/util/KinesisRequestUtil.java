@@ -6,9 +6,13 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.model.*;
 
 import java.security.InvalidParameterException;
+import java.util.Base64;
 
 @UtilityClass
 public class KinesisRequestUtil {
+
+    private final Base64.Encoder BASE64_ENCODER = Base64.getEncoder();
+    private final Base64.Decoder BASE64_DECODER = Base64.getDecoder();
 
     public @NotNull CreateStreamRequest createStreamRequest(@NotNull String streamName, int shardCount) {
 
@@ -51,18 +55,23 @@ public class KinesisRequestUtil {
             .build();
     }
 
-
     public @NotNull GetRecordsRequest toGetRecordsRequest(
-        @NotNull String streamName,
-        @NotNull String shardIterator
+        @NotNull String shardIterator,
+        int limit
     ) {
 
         return GetRecordsRequest.builder()
-            .shardIterator()
+            .shardIterator(shardIterator)
+            .limit(limit)
             .build();
     }
 
+    public @NotNull ListShardsRequest toListShardsRequest(@NotNull String streamName) {
 
+        return ListShardsRequest.builder()
+            .streamName(streamName)
+            .build();
+    }
 
     public @NotNull GetShardIteratorRequest toGetShardIteratorRequest(
         @NotNull String streamName,
@@ -72,7 +81,24 @@ public class KinesisRequestUtil {
         return GetShardIteratorRequest.builder()
             .streamName(streamName)
             .shardId(shardId)
-           .shardIteratorType(ShardIteratorType.TRIM_HORIZON)
+            .shardIteratorType(ShardIteratorType.TRIM_HORIZON)
             .build();
+    }
+
+    public @NotNull GetRecordsRequest toGetRecordsRequest(@NotNull String shardIterator) {
+
+        return GetRecordsRequest.builder()
+            .shardIterator(shardIterator)
+            .build();
+    }
+
+    public byte @NotNull [] encodeBase64(@NotNull String data) {
+
+        return BASE64_ENCODER.encode(data.getBytes());
+    }
+
+    public byte @NotNull [] decodeBase64(@NotNull String data) {
+
+        return BASE64_DECODER.decode(data.getBytes());
     }
 }
